@@ -1,0 +1,524 @@
+[原创] HP-UX COMMAND 
+
+--------------------------------------------------------------------------------
+ 
+http://www.chinaunix.net 作者:sz_zte  发表于：2005-12-09 15:54:18 
+【发表评论】【查看原文】【HP-UX讨论区】【关闭】  
+
+# ioscan –fnkC disk 
+
+# swinstall –s /cdrom/(filename)        <安装软件补丁从cdrom下>; 
+
+# swremove                        <卸除应用程序>; 
+
+# shutdown 0                       <进入单用户模式>; 
+# init 3                            <进入多用户>; 
+
+# umount /opt                       <卸除opt>; 
+  <umount /opt 时报错，不能umount opt,可以用ps –ef |grep opt 命令查看opt进程然后用 kill –9 5988 >; -9 强行关掉命令，5988 进程名 
+
+# swlist –l fileset –a state|grep PHKL_18543   <查找PHKL_18543这个补丁是否安装>; 
+
+# lvextend –L 30 /dev/vg00/lvol5        <扩大逻辑卷为30兆>; 
+# extendfs /dev/vg00/rlvol5            <r 一定要加这个字母>; 
+# mount /opt 
+# mount –a                         <全部设备mount>; 
+# bdf                              <查看容量是否扩大>; 
+
+# lvextend –L 200 /dev/vg00/lvol6      <在线将tmp文件系统扩展到800Mb>; 
+# fsadm –b 819200 /tmp         
+# bdf 
+
+# tsm                             <启动多进程，用ctrl_t切换窗口或按F1、F2来切换>; 
+
+# make_tape_recovery –Av                <备份系统到磁带上、备份到磁带上的系统文件看不到。用这个命令之前必须安装Ignite-ux这个软件>; 
+# chmod 777 或 444                <该文件执行属性，777 改为可执行文件同时放开权限，444 收回权限同时改为不可执行文件>; 
+
+# mstm                            <查看机器信息>; 
+
+# armdsp –i                          <查看VA信息>; 
+
+# cvui                             <设置VA命令>; 
+  < /opt/sanmgr/hostagent/sbin  (先进入这个目录) 
+   /HA_trigger   先 stop    后 start 
+   /dial_trigger      stop       start 
+   磁盘柜进程全部 先 stop 后starl,否则找不到VA>; 
+
+# armmgr –s shut / start 别名                <VA关机和重起>; 
+
+VA控制器 
+第一步： 
+# cd /opt/sanmgr/commandview/server/data 
+# mv DeviceDBfile DeviceDBfile.old 
+第二步： 
+# cd /opt/sanmgr/hostagent/sbin 
+# ./HA_trigger stop 
+# ./dial_trigger stop 
+# ./HA_trigger start 
+# ./dial_trigger start 
+# armdiscover  
+
+# armdiscover                       <查找阵列柜>; 
+
+# amdsp -a fc                     <查看FC60状态,disk状态要显示Optimal,显示Replaced要注意>; 
+# amdsp -d fc|grep "Disk State"      <查看FC60硬盘状态>; 
+
+# pa pri 1/0/0/2/0.6.0                  <改动启动路径（主）>; 
+# pa alt 1/0/0/2/0.6.0                  <改动启动路径（副）>; 
+# lvlnboot –v                       <查看启动路径>; 
+
+# setboot –s on/off                   <设置机器是否自动启动>; 
+# setboot –b on/off 
+
+# mediainit /dev/rdsk/cxtydz            <对一个磁盘进行格式化和校验其完整性>; 
+
+# swapinfo                          <查看机器的一些信息>; 
+# dmesg                            <查看MEMORY>; 
+# top                               <查看CPU>; 
+# swlist                            <查看安装了那些软件>; 
+# vgdisplay –v                       <查看FreePE（硬盘剩余大小）>; 
+# grep –i error syslog.log               <快速查看syslong.log内的错误>; 
+# egrep –i “war|err|fail|scsi|lan” /dev/adm/syslog/syslog.log   
+# ioscan –kfnCtape                    <查看磁带机>; 
+# lanscan                            <查看网卡>; 
+# ioscan –kfnCfc                      <查看光纤卡>; 
+# ioscan –fnH0/0/1/0                   <查看0/0/1/0地址信息>; 
+# netstat –in 
+# ifconfig lan* 
+
+# info_col.11                        <收集机器信息，做安装报告用>; 
+# info_col.1026                       <收集10.26版本信息>; 
+
+# dd if=/dev/rdsk/cxtydo of=/dev/rdsk/cxtydo bs=1024k     <整盘copy，if后面是旧盘，of后面是新盘>; 
+# dd if=/dev/dsk/cxtydo of=/dev/dsk/cxtydo bs=1024k 
+
+# sar –d                                <查看硬盘使用频率>; 
+
+添加磁带机： 
+第一种方法： 
+# tsm 
+# sam 
+# peripheral devices &#61664; Tape drives      <在Actions项选择Add>; 
+第二种方法： 
+ 在kernel内修改stape 改成In   <在Actions &#61664; Add drives to kernel>; 
+
+加机械臂驱动（可以在kernel改）： 
+schgr -&#61664; in 
+spt --&#61664;  in 
+spt0 -&#61664;  in 
+
+Setup 网卡IP: 
+# cd /etc/rc.config.d 
+# vi netconf 
+     shift:1,$ s/old/new/g               <把所有Old replace New>; 
+
+# tar rv 文件名                      <copy文件到磁带上>; 
+# tar xv 文件名                      <从磁带copy到本机上>; 
+# tar cv                             <删除磁带上的所有内容>; 
+# tar tv                             <查看磁带上的内容>; 
+# tar tvf /dev/rmt/1m                  <指定1m磁带机文件名>; 
+# tar rvf /dev/rmt/1m tmp              <copy tmp目录到1m磁带机上>; 
+# mt offl                           <磁带退出>; 
+
+# bdf –v                             <查看逻辑卷的使用情况、空间大小>; 
+
+# fuser –ck /cdrom                    <清除cdrom中所有进程，否则光驱不会开门>; 
+
+# ioscan 
+# insf –e                             <生成设备文件名、加载设备驱动文件名>; 
+# insf –evCdisk                       <查看设备是否有变化，恢复设备驱动号>; 
+
+# vgscan –a                      <如果/etc/lvmtab的文件不正常、或丢失，可用这个命令来重新生成lvmtab,但是做之前一定要备份lvmtab>; 
+配置MODEM 
+# ctrl_b                              <进入GSP状态、配置MODEM >; 
+# ca                                 <配置MODEM>; 
+# er                                 <激活MODEM>; 
+
+# GSP >;XD 
+     >;R                             <Reset GSP>; 
+
+# ctrl_b 
+# GSP>;lc                           <修改LAN console IP>; 
+
+
+安装Ignite (B5725AA):Make_recovery 不能备份，可以修改设置： 
+# vi /opt/ignite/bin/make_medialif  到502行（shift_Enter）修改： 
+lifinit $ipl_options –v72000000 –d24  为 
+lifinit $ipl_options –v102000000 –d24 
+设置或调整VA： 
+  先用Console连接VA进行调整&Setup，或用15针窜口线连接电脑。 
+  # vfpdsp -?                         <查看参数>; 
+  # vfpdsp –f 
+  # vfpdsp –L  
+
+  # vfprecover                        <恢复VA数据>; 
+  # vfprecover –s              
+做Mirror的步骤： 
+pvcreate –f –B /dev/rdsk/c2t2d0 
+mkboot /dev/rdsk/c2t2d0 
+mkboot –a “hpux –lq(;0) /stand/vmunix” /dev/rdsk/c1t2d0 
+mkboot –a “hpux –lq(;0) /stand/vmunix” /dev/rdsk/c2t2d0 
+vgextend /dev/vg00 /dev/dsk/c2t2d0 
+lvextend –m 1 /dev/vg00/lvol1 /dev/dsk/c2t2d0 
+lvextend –m 1 /dev/vg00/lvol2 /dev/dsk/c2t2d0 
+lvextend –m 1 /dev/vg00/lvol3 /dev/dsk/c2t2d0 
+lvextend –m 1 /dev/vg00/lvol4 /dev/dsk/c2t2d0 
+lvextend –m 1 /dev/vg00/lvol5 /dev/dsk/c2t2d0 
+lvextend –m 1 /dev/vg00/lvol6 /dev/dsk/c2t2d0 
+lvextend –m 1 /dev/vg00/lvol7 /dev/dsk/c2t2d0 
+lvextend –m 1 /dev/vg00/lvol8 /dev/dsk/c2t2d0 
+lvlnboot –r /dev/vg00/lvol3 
+lvlnboot –s /dev/vg00/lvol2 
+lvlnboot –d /dev/vg00/lvol2 
+lvlnboot –b /dev/vg00/lvol1 
+lvlnboot –R 
+setboot –a 0/0/2/0.2.0 
+进入单用户维护模式： 
+  在10秒中断时按任意健，然后键入 bo (enter),然后提示是否进入IPL模式、选择yes,然后键入hpux –is 进入单用户维护模式，然后# vgchange –a y /dev/vg00 进行初始化HP-UX系统。 
+# lvchange –M n –c n /dev/vg00/lvol2         <给mirror作优化>; 
+
+# strings /etc/lvmtab                        <查看Mirror情况>; 
+# lvlnboot –v                              <查看Mirror是否做成功>; 
+# lvdisplay –v /dev/vg00/lvol1 
+解除镜像： 
+lvreduce –m 0 /dev/vg00/lvol1 /dev/dsk/c1t2d0 
+lvreduce vg00 /dev/dsk/c1t2d0 
+
+如果mirror无法作，stringe /etc/lvmtab 有多余的PV,要删除掉。  <慎用此命令，一定要备份vgdisplay –v vg0x 信息>; 
+# vgreduce /dev/vg0x /dev/dsk/cxtydz 
+# lvremove /dev/vg01/lvol1            <删除vg01内lvol1卷>; 
+更换有镜像根盘的方法、步骤: 
+# make_tape_recovery –Av 
+# shutdown –ry 0 
+Replace the bad disk 
+Bo&#61664;y&#61664;ISL&#61664;hpux –ls 
+# vgchange –a y /dev/vg00 
+# mv /etc/lvmtab /etc/lvmtab.bak 
+# pvcreate –f /dev/rdsk/cxtydz 
+# mv /etc/lvmtab.bak /etc/lvmtab 
+# mkboot /dev/rdsk/cxytdz 
+# mkboot –a “hpux –lq(;0) /stand/vmunix” /dev/rdsk/cxtydz 
+# vgcfgrestore –n /dev/vg00 /dev/rdsk/cxtydz 
+# vgsync /dev/vg00 
+# lvlnboot –r /dev/vg00/lvol1 
+# lvlnboot –s /dev/vg00/lvol2 
+# lvlnboot –v 
+# shutdown –ry 0 
+更换有镜像硬盘的方法、步骤: 
+# lvreduce –k –m 0 
+# lvremove 
+# vgreduce –f vg00 
+
+# vgcfgbackup /dev/vgxx                 <备份vgxx信息，默认存放在/etc/lvmconf下>; 
+
+如果vg0x丢失用： 
+# vgcfgrestore –n /dev/vg0x /dev/rdsk/cxtydz 
+# vgchange –a y /dev/vg0x 
+
+AUTO RAID (磁盘阵列) 
+#arraydsp –i                           <用来找到AutoRAID序列号>; 
+#arraydsp –a                          <列出所有序列号>; 
+FC60的盘不能够随意互换，可以用一下命令试一下： 
+# amutil –d 2:1 fc                       <修复相应硬盘>; 
+# amutil –D 4:0 fc 
+# amutil –syswipe fc                     <格式化>; 
+FC60的灯提示不正常的情况下用这些命令试一下。 
+# amdsp –i               
+# ammgr –D 别名 主机名              <设置别名>; 
+# ammgr –c  AA 主机名              <设置模式，当FC60的灯全亮的时候用这个命令>; 
+配置双机的时候必须做的步骤： 
+scsi  init  0/10/0/0  6 
+scsi  rate  0/10/0/0  ultra 
+
+# vi .rhosts                      <建立两机之间信任关系，这样可以copy file>; 
+   hostname1   root 
+   hostname2   root 
+改Host名字 
+先修改：# vi /etc/hosts 内的host名字 
+127.0.0.1 hostname 
+127.0.0.1  localhost   loopback 
+后修改：# set_parms hostname 
+
+# sh PHCO_15220                 <解开补丁包，会生成一个有*.depot结尾的补丁程序>; 
+
+ftp>;mget                         <得到多个文件>; 
+ftp>;put                          <给一个文件>; 
+
+QX Modem Initialize strings 
+  AT 
+  AT&F 
+  AT&D3&R0&S1%C0 
+  ATS0=1S23=58 
+  AT&W0&Y0 
+
+设置终端类型（在安装的时候当Console显示乱码时） 
+Ctrl_scrlk look    <用Ctrl_Enter来修改类型>; 
+在安装系统的时候要修改的一些东西，否则会报错 
+# vi /etc/hosts  内的host名字后面空格加一个 . (点) 
+
+# vi .profile    内设置TERM=hp 
+
+# vi .profile   在倒数第二行加入  export PS1=’hostname’:’$PWD #’ 
+
+安装11.11i 系统时候一定要copy /usr/newconfig/etc/inittab 文件到/etc/ 下,否则系统会出错。 
+#cd /usr 
+#cd /newconfig 
+#cd /etc 
+#cp inittab /etc/ 
+
+从磁带（make_recovery）恢复 /opt 
+# mt –t /dev/rmt/0mn fsf 1 
+# tar –xvf /dev/rmt/0m opt 
+
+
+创建lvg01:  <假如lvg01是vg01的卷名、要mount到app1上>; 
+# lvcreate –L 200 –n lvg01 /dev/vg01 
+# newfs /dev/vg01/rlvg01           <# newfs –F vxfs /dev/vg01/rlvg01（-F vxfs是创建vxfs                      
+                                格式系统文件）>; 
+# mkdir /app1 
+# mount /dev/vg01/lvg01 /app1 
+# vi /etc/fctab          <修改lvg01项，机器自动启动加载的选项>; 
+
+# vi /etc/mnttab       <查看是否和fstab一样，如果用bdf命令查看lvol*不正常，就mv走mnttab,然后ioscan –fn ,insf –e 看一下，如果还不行，reboot看一下>; 
+
+# vgexport vg0x       <删除vg0x，要慎用>; 
+# vgexport –s –p –m vg0x..map /dev/vg0x   <备份vg0x map信息>; 
+# vgimport –s –m      
+
+# strings /etc/lvmtab 
+# vgreduce /dev/vg00 /dev/dsk/cxtydz 
+# chmod 777 tmp 
+
+扩展卷组(vg) <加入另外一个磁盘进入这个vg>; 
+# pvcreate /dev/rdsk/cxtydz 
+# vgextend vg0x /dev/dsk/cxtydz 
+# vgdisplay –v vg0x             <检查卷组是否被扩展进去>; 
+
+
+假如有两个DS2300盘柜做镜像：首先把上面一个DS2300做成PVG0 下面DS2300做成PVG1,然后PVG0与PVG1做镜像，具体步骤： 
+# pvcreate –f /dev/rdsk/cxdytz                 <先创建PV>; 
+# vgcreate –g PVG0 /dev/vg01 /dev/dsk/c1t1d0 /dev/dsk/c1t2d0 /dev/dsk/c1t3d0……. <创建PVG0>; 
+# vgextend –g PVG1 /dev/vg01 /dev/dsk/c2t1d0 /dev/dsk/c2t2d0 /dev/dsk/c2t3d0……. <激活PVG0>; 
+# lvcreate –s g –m 1 –L 512 –n lvroot /dev/vg01   <创建逻辑卷lvroot，大小512M，PVG0与PVG1做镜像>; 
+# strings /etc/lvmpvg 
+# strings /etc/lvmtab 
+软件故障诊断 
+1. # ioscan -fn 
+列出各I/O卡及设备的所有相关信息：如逻辑单元号，硬件地址及设备文件名等。 
+2. # ps -ef 
+列出正在运行的所有进程的各种信息：如进程号及进程名等。 
+3. # netstat -rn 
+列出网卡状态及路由信息等。 
+4. # lanscan 
+列出网卡状态及网络配置信息。 
+5. # bdf 
+列出已加载的逻辑卷及其大小信息。 
+6. # mount 
+列出已加载的逻辑卷及其加载位置。 
+7. # uname -a 
+列出系统ID 号，OS版本及用户权限等信息。 
+8. # hostname 
+列出系统网络名称。 
+9. # pvdisplay -v /dev/dsk/ct*d* 
+显示磁盘各种信息，如磁盘大小，包含的逻辑卷，设备名称等。 
+c：controller，和磁盘联接的控制器有关。 
+t：target，每个磁盘有一个唯一的target数字，只有磁盘设备本身才可以修  改。 
+d：device unit number，对于非共享控制器而言，该值将为0，对于共享控制器而言，该值将为磁盘设备单元的内部号。 
+10. # vgdisplay -v /dev/vg00 
+显示逻辑卷组信息，如包含哪些物理盘及逻辑卷等。 
+11. # lvdisplay -v /dev/vg00/lvol1 
+显示逻辑卷各种信息，如包含哪些盘，是否有镜像等。 
+三、网络故障 
+1. 如需修改网络地址、主机名等，一定要用 set_parms 命令 
+# set_parms    hostname 
+# set_parms    ip_address 
+2. 查看网卡状态：    lanscan 
+Hardware   Station                 Crd    Hardware    Net-Interface 
+Path          Address                 In#         state       nameunit state 
+8/20/5/1    0x0800097843FB  0             up              lan0    up 
+3. 确认网络地址： 
+# ifconfig    lan0 
+4. 启动网卡： 
+# ifconfig lan0 up 
+5. 网络不通的诊断过程： 
+lanscan  查看网卡是否启动 (up) 
+ping    自己网卡地址  (ip 地址) 
+ping其它机器地址，如不通，在其机器上用lanscan 命令得知 station address，然后linkloop station_address 来确认网线及集成器是否有问 题。 
+在同一网中， subnetmask 应一致。 
+6. 配置网关 
+手动加网关： 
+/usr/sbin/route   add  default   20.08.28.98 1 
+把网关自动加入系统中 
+vi  /etc/rc.config.d / netconf 
+: 
+ROUTE_DESTINATION [0]=default 
+ROUTE_GATEWAY [0]=20.08.28.98 
+ROUTE_COUNT [0]=1 
+: 
+/sbin/init.d/net  将执行： 
+/usr/sbin/route   add  default  20.08.28.98 1 
+命令 netstat  -rn  查看路由表 
+另外也可用 set_parms addl_netwrk 来设缺省路由。 
+HP-UX的硬盘资源的逻辑卷管理 
+HP－UX管理硬盘存储资源是采用逻辑卷方式来进行管理的，要说清整个机制，先要介绍几个 概念： 
+物理卷Physical Volume，称为PV：指物理上硬盘，一个硬盘就是一个PV 
+逻辑卷组 Logical Volume Group，称为VG：一个VG包含整数个PV，可理解为一个大硬盘。 
+逻辑卷 Logical Volume，称为LV：相当于对大硬盘进行逻辑分区， 一个VG里可有若干个LV。 
+文件系统 File System：在逻辑卷的基础上，可建立文件系统，然后 MOUNT到一个目录下，这样就可以文件存取的方式来使用这块硬盘了。 
+当然，您也可以不建文件系统，而直接把LV当作裸设备，以TRUNK方式来存取数据，许多数据库都是用这种方式存取数据。 
+根据以上介绍，在HPUX下正确使用硬盘的顺序及相应命令如下： 
+1. 先建物理卷： 
+# pvcreate  -f  /dev/rdsk/cCdDtT 
+这里必须使用硬盘的字符设备文件 
+2. 再建逻辑卷组： 
+# mkdir /dev/vg0X X：0～f，逻辑卷组名 
+# mknod /dev/vg0X/group c 64 0x0X0000 
+# vgcreate vg0X /dev/dsk/cCdDtT 
+3. 然后划分逻辑卷： 
+# lvcreate  -L size vg0X size：该逻辑卷大小 
+4. 在LV上建文件系统： 
+# newfs  -F file_system_type /dev/vg0X/rlvolY 
+file_system_type：文件系统类型，包括hfs和vxfs，注意此时用该逻辑卷的字符设备文件。 
+5. 将此文件系统Mount到一个目录下： 
+# mkdir /directory 
+# mount /dev/vg0X/lvolY /directory 
+到此为止，您已经可以使用这个硬盘了。有时您可能在现有的环境下，需要添加、删除逻辑卷，或者是需要扩大文件系统。我们可以这样做： 
+6. 添加逻辑卷 
+1) 添加文件系统卷。例如：在vg01上添加一个200M的文件系统卷，卷名为data，mount到目录/sample 上。 
+A、创建逻辑卷，在系统提示符下键入命令： 
+# lvcreate  -L 200  -n data /dev/vg01 
+B、在逻辑卷data上创建文件系统： 
+# newfs  -F hfs /dev/vg01/rdata 
+    注：如果是vxfs文件系统，则用 
+# newfs  -F vxfs /dev/vg01/rdata 
+C、创建目录/sample，并将逻辑卷data mount 到/sample. 
+# mkdir sample” 
+# mount /dev/vg01/data /sample 
+D、用bdf命令，将会看到/dev/vg01/data  mount 到 /sample上。 
+2) 添加非文件系统卷（raw data volume）。例同上。 
+A、创建逻辑卷，在系统提示符下键入命令： 
+# lvcreate  -L 200  -n data /dev/vg01 
+B、创建目录/sample，并将逻辑卷data mount 到/sample. 
+# mkdir sample 
+# mount /dev/vg01/data /sample 
+C、用bdf命令，将会看到/dev/vg01/data  mount 到 /sample上。 
+7. 删除逻辑卷 
+例如：删除 vg01 中名为 data 的逻辑卷，mount 到/sample。 
+1) 卸载所要删除的逻辑卷： 
+A、首先用 umount 命令将逻辑卷 data 从/sample上卸载下来： 
+     # umount /sample 
+B、若系统提示设备忙，不能卸载；则在根目录系统提示符下，键入以下命令，进入单用户： 
+        #  shutdown  -y 0 
+在单用户下，先将所有逻辑卷mount上，键入命令： 
+#  mount  -a  
+用bdf命令看该逻辑卷是否已经mount上，如果mount上，键入以下命令： 
+              #  umount /sample 
+2) 删除逻辑卷 /dev/vg01/data ，用命令： 
+     #  lvremove  /dev/vg01/data  
+8. 扩大文件系统 
+1) 扩大文件系统，首先要找到这个文件系统所对应的逻辑卷，只有首先扩大逻辑卷，给文件系统以扩大的空间，才能扩大文件系统。 
+2) 为扩大逻辑卷，先进单用户，在根目录系统提示符下，键入命令： 
+# shutdown  -y 0  
+3) 进入单用户后，先将所有文件系统mount上，键入命令： 
+               # mount  -a  
+4) 用bdf命令看该文件系统是否已经mount上，如果mount上，用命令 #umount文件系统名umount该文件系统。例如，想要扩大“/usr”到500M ,就键入命令： 
+# umount    /usr  
+5) 用命令： 
+#  lvextend  -L   500  /dev/vg00/lvol4  
+这里，假定 /usr 对应 /dev/vg00/lvol4 
+6) 用命令： 
+# extendfs   /dev/vg00/lvol4 扩大文件系统。 
+注：如果是vxfs文件系统，则用 
+    # extendfs  -F vxfs  /dev/vg00/lvol4  
+7) 用命令： 
+# mount  /dev/vg00/lvol4   /usr  
+将文件系统 mount 到 /usr 
+这样，文件系统“/usr”就被扩大了， 
+8) 用命令： 
+# init 3 进入原来多用户运行级。 
+9. unix 的文件系统 
+10. UNIX的文件系统是树状结构，一般指在一个逻辑卷上的文件的集合。从根开始，从表面上看，文件系统好象是一个整体，但实际上，文件系统可以分成不同的部分，单独占据一块逻辑卷，就是一个文件系统。 
+11.  UNIX的文件系统可以分为四种类型： 
+HFS：High-performance File System 
+VXFS: HP-UX Journaled File Ssytem 
+( VxFS is an extent-based journaling file system that offers fast file 
+system recovery and online features such as online backup, online 
+resizing, and online reorganization. It supports all existing file 
+system interfaces except HP Access Control Lists (ACL) and B1 security 
+features.  VxFS cannot be a root or bootable file system in 10.01. ) 
+CDFS: CD-ROM File System 
+NFS: Network File System 
+1) 在HPUX中，有下列文件系统： 
+“ / ” 根文件系统 
+“ /usr ”, “ /sbin ” 操作系统的一部分。 
+“ /opt ”和Application 有关的文件系统。 
+“ /etc ” mount 到此目录下的文件系统包含系统配置文件 
+“ /var ” mount到此目录下的文件系统中的文件为系统启动，运行 
+等等，产生的报告文件。 
+“ /stand ” 包含操作系统核心（Kernel）的有关文件。 
+“ /tmp ” 包含系统临时文件。 
+“ /dev ” 包含所有的设备文件，但它不是一个单独的文件系统， 
+它只是在根目录下的一个目录。 
+HP-UX的一些基本命令和常用文件 
+1. tail 和 head 
+使用tail命令可以查看文件的尾部，head命令则查看文件的头部。 
+# tail filename 
+# tail   -f filename； 使tail不断执行，当文件被写入时显示文件的新行。 
+#head filename 
+2. date 和 cal 
+cal命令显示日历。 
+# cal 2000 
+# cal 1 2000 
+3. find 
+find命令是功能最强的命令之一，但同时也是命令行结构最难以掌握的命令之一。 
+# find / -print | wc   -l  显示系统中所有文件和目录的数目。 
+# find / -user $LOGNAME  -print  显示系统中该用户所有文件和目录。 
+# find / -size 100  -print  显示文件大小为100 blocks。 
+# find / -size -100  -print   显示文件大小小于100 blocks 。 
+# find / -size +100  -print  显示文件大小大于100 blocks 。 
+# find / -name core -exec rm  {} \；查找并删除core文件。 
+# find . -exec chown $LOGNAME  {}   \； 修改一个目录下的所有文件的用户所属。 
+# find .-type d -exec chmod 770  {}  \；修改一个目录下的所有目录的权限。 
+4. stty 
+该命令用于检查和修改用户当前注册终端的通信参数。 
+# stty  -a；查看当前注册终端的通信参数。 
+# stty  -ixon；设置ixon为off。 
+#stty  ixon；设置ixon为on。 
+# stty  sane；当终端发生混乱时，通常可以产生有益的效果。 
+5. tset 
+用于设置终端类型。 
+tset -s -Q -m ‘:?hp’ 
+6. cron 
+cron(chronography，计时)，每分钟苏醒一次，查看控制文件以确定当时是否存在应运行的作业，存在则运行之。 
+# crontab filename ; 创建一个 cron 
+# crontab -r ; 把cron从crontab去掉 
+crontab位于目录/var/spool/cron/crontabs下，每个用户的cron文件名是其用户名。  
+7. /etc/hosts 
+8. /etc/passwd 
+口令文件，内容为： 
+登录用户名：加密口令：用户ID：组ID：保留：初始工作目录：shell路径 
+9. /etc/group 
+内容为： 
+组名：加密密码：组ID：所有属于该组的用户。 
+10.  /etc/profile 
+如果该文件存在，则每个用户登录时被执行。该文件一般用于设置一些通用环境变量，如果用户的home目录中存在.profile文件，则在执行/etc/profile之后，再执行用户的.profile文件。 
+11. /etc/inittab 
+内部初始化之后，系统将启动/etc/init这个deamon进程，使/etc/init进程取得引导序列的控制权。而init进程从文件/etc/inittab(inittable，初始化表)取得指示，该文件 的内容控制所有init状态，同时也控制那些已消亡进程的再生。 
+12. /etc/fstab 
+系统中可以mount的文件系统的信息。 
+13.  /etc/lvmtab 
+使用命令： 
+# strings  /etc/lvmtab；查看系统VG和磁盘信息。 
+14.  /etc/rc.config.d/netconf 
+包含系统名称和网络配置信息，如IP地址、子网掩码和路由信息等。 
+15. /stand/system 
+包含系统的驱动程序和子系统信息，内核设备信息和一些系统可调参数信息。 
+安装系统时需要安装的软件及补丁 
+1． VA管理软件        /cdrom/hpux/        <安装时需要进入这个目录、指定所需要安 
+                                           装的软件名>; 
+2． MC                B3935DA           <第3张碟>; 
+3． Ignite              B5725AA            <第2张碟>; 
+4.   Megpatch                               <随时更新的碟>; 
+5.   MirrorDisk          B2491BA
+ 
+ 
